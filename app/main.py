@@ -1,16 +1,14 @@
 from flask import Flask, config, render_template, request,redirect,url_for,send_file
 from dotenv import dotenv_values
+from torch.cuda import init
 import tweepy
 import pandas as pd
 import numpy as np
 from predict import Pred
-import io
-import base64
-import os
+from torch_process import torch_pred
 
 
 app = Flask(__name__)
-
 
 
 
@@ -61,13 +59,16 @@ def grab_tweets(user):
                 break
     df = pd.DataFrame(output,columns=['tweets'])
     process = Pred()
+    print("Next up => cleaning")
     cleaned = process.read_tweets(df)
-    get_pole = process.poles(cleaned)
-    print(cleaned)
-    print("Downloaded {0} tweets,saved to {1}".format(tweetCount,fName))
+    #cleaned.to_csv(r'tweets.csv',index=False)
+    print("Init torch")
+    init_pred = torch_pred(cleaned)
+    print("trying to predict")
+    output = init_pred.pred()
+    print(output)
 
 
-  
 
 
 
@@ -86,6 +87,14 @@ def home():
 def predict():
     return render_template('predict.html')
 
+
+
+#later
+#@app.route('/visualize')
+#def visualize():
+#    sns.scatterplot(tweet_polarity, #x-axis
+#                tweet_subjectivity, #y-axis
+#                s=100)
 
 
 
