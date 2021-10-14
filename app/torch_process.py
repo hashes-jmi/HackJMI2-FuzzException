@@ -24,6 +24,14 @@ class torch_pred():
         data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
         tweets = df
 
+        checkpoint = "distilbert-base-uncased"
+        PATH = "app/toxic_distilBERT_multilabel_save.pt"
+        self.model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels = 6)
+        self.model.load_state_dict(torch.load(PATH, map_location=torch.device('cpu')))
+        self.device = torch.device("cpu")
+
+
+
         sub_tokens = tokenizer.batch_encode_plus(tweets["cleaned_tweets"].tolist(),
                                          max_length = 200,
                                          pad_to_max_length=True,
@@ -35,16 +43,8 @@ class torch_pred():
         sub_mask = torch.tensor(sub_tokens['attention_mask'])
         self.sub_data = TensorDataset(sub_seq, sub_mask)
         batch_size = 32
-# dataLoader for validation set
-        self.sub_dataloader = DataLoader(self.sub_data, 
-                            batch_size=batch_size)
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
-        checkpoint = "distilbert-base-uncased"
-        PATH = "app/toxic_distilBERT_multilabel_save.pt"
-        self.model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels = 6)
-        self.model.load_state_dict(torch.load(PATH, map_location=torch.device('cpu')))
-
+        # dataLoader for validation set
+        self.sub_dataloader = DataLoader(self.sub_data,batch_size=batch_size)
 
 # Measure how long the evaluation going to takes.
 
@@ -55,9 +55,9 @@ class torch_pred():
     # Progress update every 40 batches.
             if step % 40 == 0 and not step == 0:
             # Calculate elapsed time in minutes.
-                elapsed = format_time(time.time() - t0)
+                elapsed = (time.time() - t0)
                 # Report progress.
-                print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(sub_dataloader), elapsed))
+                print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.sub_dataloader), elapsed))
             b_input_ids = batch[0].to(self.device)
             b_input_mask = batch[1].to(self.device)
             with torch.no_grad():
@@ -71,4 +71,4 @@ class torch_pred():
 
         categories = ['toxic','severe_toxic','obscene','threat','insult','identity_hate']
         predictions_df = pd.DataFrame(predictions, columns = categories)
-        return predictions_df
+        print(predictions_df)
