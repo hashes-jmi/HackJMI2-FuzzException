@@ -27,7 +27,7 @@ def grab_tweets(user):
     sinceId = None
     max_id = -1
     output = []
-    maxTweets = 1000
+    maxTweets = 100
     tweetCount = 0
     print("Downloading max {0} tweets",format(maxTweets))
     with open(fName,'w') as f:
@@ -66,7 +66,7 @@ def grab_tweets(user):
     init_pred = torch_pred(cleaned)
     print("trying to predict")
     output = init_pred.pred()
-    print(output)
+    return output
 
 
 
@@ -77,8 +77,8 @@ def home():
     if request.method=='POST':
         global name
         name = request.form['userName'].strip()
-        grab_tweets(name)
-        return render_template('predict.html',userName=name)
+        output = grab_tweets(name)
+        return render_template('predict.html',userName=name,output=output)
     return render_template('home.html')
     
     
@@ -101,4 +101,4 @@ def predict():
 if __name__ == '__main__':
     config = dotenv_values('app/.env')
     auth(config)
-    app.run()
+    app.run(debug = True)
